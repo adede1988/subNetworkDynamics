@@ -1,5 +1,5 @@
-function [idxVals] = DBscanDynamicEpi(corMat, k, d)
-    %This function is designed to take as input a correlation matrix for
+function [idxVals] = DBscanDynamicEpi(corMat, k, d, plotIt)
+    %This function is designed to take as input a squared correlation matrix for
     %clustering and a value of k to be used as input to the DBscan algorithm.
     %corMat: an n X n symmetric matrix of correlation values
     %k: an integer value well below n 
@@ -16,14 +16,15 @@ function [idxVals] = DBscanDynamicEpi(corMat, k, d)
     %% make matrix to be clustered
     %convert into a correlation matrix of relationships between connectivity
     %maps rather than between individual channels (Liu et al., 2012)
-    distMat = corrcoef(corMat); 
-    %convert into a squared distance matrix. This forces positivity, which is
-    %necessary for DBscan input and increases contrast
-    for ii = 1:d
-        distMat = pdist2(distMat, distMat) .^2; 
-    end
-    if d==0
-        distMat = distMat .^2; 
+    if d>0
+        distMat = corrcoef(corMat); 
+        %convert into a squared distance matrix. This forces positivity, which is
+        %necessary for DBscan input and increases contrast
+        for ii = 1:d
+            distMat = pdist2(distMat, distMat).^2; 
+        end
+    else
+        distMat = pdist2(corMat, corMat, 'correlation');
     end
     
     %% find the k-distance for each point
@@ -34,9 +35,9 @@ function [idxVals] = DBscanDynamicEpi(corMat, k, d)
         kdist(ii) = curRow(k); 
     end
     kdist = sort(kdist); 
-    if min(kdist)<0
-        'WOW THIS IS WEIRD!'
-    end
+%     if min(kdist)<0
+%         'WOW THIS IS WEIRD!'
+%     end
     %use the derivative (running diff) of k-distances to find discontinuity
     %smoothing is important to identify where the initial sustained rise occurs 
     kdist_diff = smoothdata(diff(kdist), 'gaussian', length(kdist)/10); 
@@ -103,12 +104,86 @@ function [idxVals] = DBscanDynamicEpi(corMat, k, d)
         %clustering
         peakToUse = candidates(1); 
     end
+
+
+    %% try a different epsilon optimization: 
+%     % range of epsilon parameter values
+%     nepsis = 100;
+%     epsis  = linspace(min(kdist),max(kdist),nepsis);
+%     qvec   = nan(nepsis,1);
+%     
+%     for epi=1:length(epsis)
+%         
+%         % scan
+%      
+%         freqbands = dbscan(distMat,epsis(epi),k,'Distance','precomputed');
+%        
+% 
+%         if max(freqbands)<4, continue; end
+%         
+%         % compute q
+%         qtmp = zeros(max(freqbands),1);
+%         MA = false(size(distMat));
+%         for i=1:max(freqbands)
+%             M = false(size(distMat));
+%             M(freqbands==i,freqbands==i) = 1;
+%             qtmp(i) = mean(mean(distMat(M))) / mean(mean(distMat(~M)));
+%             MA = MA+M;
+%         end
+%         qvec(epi) = mean(qtmp) + log(mean(MA(:)));
+%     end
+% 
+%     [~,epsiidx] = findpeaks(qvec,'NPeaks',1,'SortStr','descend');
+%     if isempty(epsiidx), epsiidx = round(nepsis/2); end
+
     
     %% now do the clustering!
     if ~isempty(peakToUse)
+%       epsis(epsiidx)
+%         idxVals = dbscan(distMat, epsis(epsiidx), k, 'Distance','precomputed'); 
+        kdist(peakToUse)
         idxVals = dbscan(distMat, kdist(peakToUse), k, 'Distance','precomputed'); 
+
+
+        %% plot summary of how epsilon was chosen? 
+        if plotIt ==1
+            figure
+            subplot(231)
+            plot(kdist)
+            hold on
+            yline(kdist(peakToUse))
+            xline(peakToUse)
+            
+            subplot(232)
+            plot(kdist_diff)
+            hold on 
+            yline(thresh, '--', 'LineWidth', 3, 'alpha', .25)
+            xline(peakToUse)
+        
+            subplot(233)
+            imagesc(corMat)
+        
+            subplot(234)
+            imagesc(distMat)
+        
+        
+            subplot(235)
+            [~, order] = sort(idxVals);
+            imagesc(corMat(order, order))
+
+            subplot(236)
+            imagesc(distMat(order, order))
+        
+        
+        
+        
+        
+        end
+
+
     else
         idxVals = zeros(length(distMat), 1);
         "warning: no good epsilon value found, returning zeros"
+        d
     end
 end
