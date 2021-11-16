@@ -1,32 +1,110 @@
-function [idxVals] = DBscanDynamicEpi(corMat, k, d, plotIt)
-    %This function is designed to take as input a squared correlation matrix for
-    %clustering and a value of k to be used as input to the DBscan algorithm.
-    %corMat: an n X n symmetric matrix of correlation values
-    %k: an integer value well below n 
+function [idxVals] = DBscanDynamicEpi(varargin)
+
+%This function is a wrapper for Matlab's builtin DBscan function
+%There must be at least two inputs in the first and second input positions: 
+%1) corMat   : a symmetric matrix of correlations between points to be
+%              clustered
+%There are four optional inputs (which are assumed to be inputs 2-5): 
+%2) k        : The k parameter for input to DBscan [default = 3]
+%3) transform: how the input corMat should be transformed before clustering
+%              [default = 'raw']
+%4) d        : the number of extra loops of distancing to perform; only
+%              works with 'mapDistx' as the transformation; [default = 1] 
+%5) plotIt   : 0 = do not make summary plots; 1 = make summary plots 
+%              [default = 0]
+
+%four main computations are performed: 
+%1) transformation of the corMat. The goal is to increase the contrast of
+%the input matrix to make for better clustering output. The possible
+%transformations are specified as string inputs to the transofrm varargin 
+%as follows:
+%       'raw'[default]: pdist2(corMat, corMat, 'correlation')
+%       'map'         : pdist2(corrcoef(corMat), corrcoef(corMat), 'correlation') 
+%       'mapDist'     : pdist2(corrcoef(corMat), corrcoef(corMat))
+%       'mapDist2'    : pdist2(corrcoef(corMat), corrcoef(corMat)) .^2
+%       'mapDistX'    : loops d additional times on the output from the
+%                       mapDist2 option
+%2) finding of appropriate epsilon value. Using the k-distance values in
+%the transformed matrix, an epsilon value is selected that maximizes the
+%steepness of the sorted k-distance curve. See discussion of Figure 4 in
+%Ester et al. (1986) for more detail. 
+%3) application of DBscan 
+%4) plotting if requested
+
+%output is a 1-d vector of cluster assignments where -1 means unclustered and
+%positive integers indicate different clusters
+
+%the general idea of transforming the space to be clustered from one of
+%point-wise connections/similarities/correlations to one of row by column
+%connections using corrcoef(corMat) was inspired by Liu et al. (2012).
+
+%Adam Dede, adam.osman.dede@gmail.com, Fall 2021
+
+%Refs: 
+%Liu, Zhu, Chen, 2012. J neurosci Methods.
+%Ester, Kriegel, Sander, Xu, 1996
+
+    %% get out the inputs
     
-    %output: 
-    %idxVals: 1 X n vector of cluster assignments. The -1 cluster indicates
-    %those input rows from the corMat that did not get assigned to a cluster
-    
-    %Adam Dede, adam.osman.dede@gmail.com, Fall 2021
-    
-    %Refs: 
-    %Liu, Zhu, Chen, 2012. J neurosci Methods.
-    
-    %% make matrix to be clustered
-    %convert into a correlation matrix of relationships between connectivity
-    %maps rather than between individual channels (Liu et al., 2012)
-    if d>0
-        distMat = corrcoef(corMat); 
-        %convert into a squared distance matrix. This forces positivity, which is
-        %necessary for DBscan input and increases contrast
-        for ii = 1:d
-            distMat = pdist2(distMat, distMat).^2; 
-        end
-    else
-        distMat = pdist2(corMat, corMat, 'correlation');
+    switch nargin
+        case 1
+            corMat = varargin{1}; 
+            k = 3;
+            transform = 'raw'; 
+            d = 1; 
+            plotIt = 0;
+        case 2
+            corMat = varargin{1}; 
+            k = varargin{2}; 
+            transform = 'raw';
+            d = 1; 
+            plotIt = 0; 
+        case 3
+            corMat = varargin{1}; 
+            k = varargin{2}; 
+            transform = varargin{3};
+            d = 1; 
+            plotIt = 0; 
+        case 4
+            corMat = varargin{1}; 
+            k = varargin{2}; 
+            transform = varargin{3};
+            d = varargin{4}; 
+            plotIt = 0; 
+        case 5
+            corMat = varargin{1}; 
+            k = varargin{2}; 
+            transform = varargin{3};
+            d = varargin{4}; 
+            plotIt = varargin{5}; 
+        otherwise
+            warning('Error: at least one input is needed')
+            return
     end
     
+    %% transformation step
+    % various ways of increasing contrast on the input correlationo matrix
+    % convert into a correlation matrix of relationships between connectivity
+    % maps rather than between individual channels is inspired by Liu et al., 2012
+    switch transform
+        case 'raw'
+            distMat = pdist2(corMat, corMat, 'correlation');
+        case 'map'        
+            distMat = pdist2(corrcoef(corMat), corrcoef(corMat), 'correlation'); 
+        case 'mapDist'     
+            distMat = pdist2(corrcoef(corMat), corrcoef(corMat));
+        case 'mapDist2'     
+            distMat = pdist2(corrcoef(corMat), corrcoef(corMat)) .^2;
+        case 'mapDistX'
+            distMat = pdist2(corrcoef(corMat), corrcoef(corMat)) .^2;
+            for ii = 1:d
+                distMat = pdist2(distMat, distMat).^2; 
+            end
+    end
+
+    
+    %% find appropriate epsilon value: 
+        %f
     %% find the k-distance for each point
     kdist = zeros(length(distMat),1);
     for ii = 1:length(kdist)
@@ -35,9 +113,7 @@ function [idxVals] = DBscanDynamicEpi(corMat, k, d, plotIt)
         kdist(ii) = curRow(k); 
     end
     kdist = sort(kdist); 
-%     if min(kdist)<0
-%         'WOW THIS IS WEIRD!'
-%     end
+
     %use the derivative (running diff) of k-distances to find discontinuity
     %smoothing is important to identify where the initial sustained rise occurs 
     kdist_diff = smoothdata(diff(kdist), 'gaussian', length(kdist)/10); 
@@ -106,42 +182,12 @@ function [idxVals] = DBscanDynamicEpi(corMat, k, d, plotIt)
     end
 
 
-    %% try a different epsilon optimization: 
-%     % range of epsilon parameter values
-%     nepsis = 100;
-%     epsis  = linspace(min(kdist),max(kdist),nepsis);
-%     qvec   = nan(nepsis,1);
-%     
-%     for epi=1:length(epsis)
-%         
-%         % scan
-%      
-%         freqbands = dbscan(distMat,epsis(epi),k,'Distance','precomputed');
-%        
-% 
-%         if max(freqbands)<4, continue; end
-%         
-%         % compute q
-%         qtmp = zeros(max(freqbands),1);
-%         MA = false(size(distMat));
-%         for i=1:max(freqbands)
-%             M = false(size(distMat));
-%             M(freqbands==i,freqbands==i) = 1;
-%             qtmp(i) = mean(mean(distMat(M))) / mean(mean(distMat(~M)));
-%             MA = MA+M;
-%         end
-%         qvec(epi) = mean(qtmp) + log(mean(MA(:)));
-%     end
-% 
-%     [~,epsiidx] = findpeaks(qvec,'NPeaks',1,'SortStr','descend');
-%     if isempty(epsiidx), epsiidx = round(nepsis/2); end
-
     
     %% now do the clustering!
     if ~isempty(peakToUse)
 %       epsis(epsiidx)
 %         idxVals = dbscan(distMat, epsis(epsiidx), k, 'Distance','precomputed'); 
-        kdist(peakToUse)
+%         kdist(peakToUse)
         idxVals = dbscan(distMat, kdist(peakToUse), k, 'Distance','precomputed'); 
 
 
