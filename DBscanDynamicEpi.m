@@ -81,6 +81,10 @@ function [idxVals] = DBscanDynamicEpi(varargin)
             warning('Error: at least one input is needed')
             return
     end
+
+    if isempty(k) || ~isnumeric(k)
+        k = 3;
+    end
     
     %% transformation step
     % various ways of increasing contrast on the input correlationo matrix
@@ -151,7 +155,14 @@ function [idxVals] = DBscanDynamicEpi(varargin)
         %check if the threshold was ever crossed
         if max(kdist_diff) > thresh
             %it is crossed, so just grab the point where it crosses and use it
-            peakToUse = find(kdist_diff>thresh,1)-1; 
+            peakToUse = find(kdist_diff>thresh,1)-1;
+            
+            if peakToUse == 0 && max(kdist_diff(2:end)) > thresh
+                peakToUse = find(kdist_diff(2:end)>thresh,1)-1;
+            elseif peakToUse == 0
+                peakToUse = 1; 
+            end 
+                
         else
             %try again without the smoothing to see if it can be salvaged
             kdist_diff = diff(kdist); 
@@ -216,10 +227,18 @@ function [idxVals] = DBscanDynamicEpi(varargin)
             subplot(235)
             [~, order] = sort(idxVals);
             imagesc(corMat(order, order))
+            locs = find(diff(sort(idxVals)));
+            for val=1:length(locs)
+                yline(locs(val)+.5, '--', 'LineWidth', 3, 'alpha', .5, 'color', 'k')
+                xline(locs(val)+.5, '--', 'LineWidth', 3, 'alpha', .5, 'color', 'k')
+            end
 
             subplot(236)
             imagesc(distMat(order, order))
-        
+            for val=1:length(locs)
+                yline(locs(val)+.5, '--', 'LineWidth', 3, 'alpha', .5, 'color', 'k')
+                xline(locs(val)+.5, '--', 'LineWidth', 3, 'alpha', .5, 'color', 'k')
+            end
         
         
         
