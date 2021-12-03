@@ -1,8 +1,30 @@
 function [outClust] = greedyNMIalign(sets)
     
-    %input: sets: electrodes X cluster schemes
-    
+    %this function takes in a matrix where the rows indicate variables and
+    %the columns indicate different clusterings of those variables. All
+    %values should be positive integers except for the value -1, which is
+    %reserved to indicate unclustered/noise. The input sets are all made to
+    %fit a standardized format. Then the average normalized mutual
+    %information between each set and all of the other sets is calculated.
+    %The set with the best starting average normalized mutual information
+    %is used as the seed for the algorithm. A greedy search algorithm loops
+    %through the variables changing each one, one at a time, to all of the
+    %possible clusters and recalculating normalized mutual information at
+    %each step. Changes that increase the normalized mutual information are
+    %accepted. This loop continues until no changes are made. The resulting
+    %cluster scheme is returned. 
 
+    %input: 
+    %   sets: variables X cluster schemes 
+
+    %output:
+    %   outClust: a vector with a single cluster scheme that has maximal
+    %             average mutual information with all of the input sets
+    
+    %Adam Dede, adam.osman.dede@gmail.com, Fall 2021
+    
+    %Ref: Strehl, A., Ghosh, J. (2002). Cluster Ensembles--A knowledge reuse
+    %framework for combining multiple partitions. J Machine Learning Research
 
     
     %% first make the input sets fit the form 

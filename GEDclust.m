@@ -1,4 +1,4 @@
-function [result, L, comps] = GEDclust(varargin)   
+function [L, comps, maps, W, result] = GEDclust(varargin)   
 
 %This function performs generalized eigen decomposition (GED) in order to
 %find a single time series that maximizes the difference between Sinput and
@@ -43,6 +43,10 @@ function [result, L, comps] = GEDclust(varargin)
 %                        default = [1,2]
 
 %outputs: 
+%   L:      eigenvalues 
+%   comps:  channels X timepoints eigencomponents resulting from GED
+%   maps:   channels X channels component maps for each eigencomponent
+%   W:      eigenvectors
 %   result: summary statistics about the GED returned as a vector where: 
             %item 1: eigenvalue of top component
             %item 2: IDcode
@@ -56,8 +60,7 @@ function [result, L, comps] = GEDclust(varargin)
             %item 10: rank of R matrix
             %item 11: negative eigenvec flag
             %item 12: variance explained by 1st component
-%   L:      eigenvalues 
-%   comps:  channels X timepoints eigencomponents resulting from GED
+
 
 %Adam Dede, adam.osman.dede@gmail.com, Fall 2021
 
@@ -131,8 +134,8 @@ end
 
     for segi=1:length(onsets)-1
 
-        snipdat = ( Sinput(curChan_i,onsets(segi):onsets(segi+1)) );
-        rnipdat = ( Rinput(curChan_i,onsets(segi):onsets(segi+1)) );
+        snipdat = ( Sinput(curChan_i,onsets(segi):(onsets(segi+1)-1)) );
+        rnipdat = ( Rinput(curChan_i,onsets(segi):(onsets(segi+1)-1)) );
 
         snipdat = snipdat - mean(snipdat,2);
         rnipdat = rnipdat - mean(rnipdat,2);
@@ -140,17 +143,34 @@ end
         Stmp(segi,:,:) = snipdat*snipdat'/(onsets(segi+1) - onsets(segi));
         Rtmp(segi,:,:) = rnipdat*rnipdat'/(onsets(segi+1) - onsets(segi)); 
     end
+    % clean S
+    meanS = squeeze(mean(Stmp));
+    dists = zeros(1,size(Stmp,1));
+    for segi=1:size(Stmp,1)
+        s = Stmp(segi,:,:);
+        dists(segi) = sqrt( sum((s(:)-meanS(:)).^2) );
+    end
+    %S for GED
+    S = squeeze(mean( Stmp(zscore(dists)<3,:,:) ,1));
 
 
-
-    %S and R matrices for GED
-    S = squeeze(mean( Stmp ,1));
-    R = squeeze(mean( Rtmp ,1));
+    % clean R
+    meanR = squeeze(mean(Rtmp));
+    dists = zeros(1,size(Rtmp,1));
+    for segi=1:size(Rtmp,1)
+        r = Rtmp(segi,:,:);
+        dists(segi) = sqrt( sum((r(:)-meanR(:)).^2) );
+    end
+    %R for GED
+    R = squeeze(mean( Rtmp(zscore(dists)<3,:,:) ,1));
 
     % regularize R
     gamma = .01;
     Rr = R *(1-gamma) + eye(length(R))*gamma*mean(eig(R));
 
+    % global variance normalize
+    S = S / (std(S(:))/std(R(:)));
+    
     % eig
     [W,L] = eig(S,Rr);
 
@@ -189,6 +209,7 @@ end
     end
     result(12) = result(1) / result(8); 
 
-    comps = hilbert(W' * Sinput(curChan_i,:)); 
+    comps = hilbert(W' * Sinput(curChan_i,:));
+    maps = W' * S; 
 
 end

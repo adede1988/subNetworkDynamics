@@ -1,5 +1,25 @@
 function [nmi] = nmi(set1, set2)
 
+%this function takes in two vectors of cluster IDs and returns their
+%normalized mutual information based on equation 3 from Strehl and Ghosh
+%(2002). 
+
+%inputs: 
+%   set1 and set2: vector2 of cluter IDs where -1 indicates noise/
+%                  unclustered and positive integer values indicate 
+%                  different cluster labels
+
+%output: 
+%   nmi:           normalized mutual information ranges from 0 to 1 where 0
+%                  indicates completely different input vectors and 1
+%                  indicates complete overlap of information
+
+%Adam Dede, adam.osman.dede@gmail.com, Fall 2021
+
+%Ref: Strehl, A., Ghosh, J. (2002). Cluster Ensembles--A knowledge reuse
+%framework for combining multiple partitions. J Machine Learning Research
+
+
     clustIDs = unique(set1); 
     clustIDs2 = unique(set2); 
     clustIDs(clustIDs==-1) = []; 
@@ -42,14 +62,10 @@ function [nmi] = nmi(set1, set2)
     %under and over situations will only occur when there's only a noise
     %cluster in one or other of the cluster schemes being considered!
     if nmi < 0 
-%         "under!"
-%         length(clustIDs)
-%         length(clustIDs2)
+        warning('check inputs for cluster scheme of all -1')
         nmi = 0; 
     elseif nmi > 1
-%         "over!"
-%         length(clustIDs)
-%         length(clustIDs2)
+        warning('check inputs for cluster scheme of all -1')
         nmi = 1; 
     end
 
