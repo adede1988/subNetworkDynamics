@@ -82,6 +82,23 @@ function [idxVals] = DBscanDynamicEpi(varargin)
             return
     end
 
+    if isnumeric(transform)
+        if transform==1
+            transform = 'raw';
+        elseif transform==2
+            transform = 'map'; 
+        elseif transform==3
+            transform = 'mapDist';
+        elseif transform ==4
+            transform = 'mapDist2';
+        elseif transform > 4
+            transform = 'mapDistX';
+        end
+    end
+    if isnumeric(transform)
+        warning('transform argument must be a positive integer or a string')
+        return
+    end
     if isempty(k) || ~isnumeric(k)
         k = 3;
     end
@@ -158,7 +175,7 @@ function [idxVals] = DBscanDynamicEpi(varargin)
             peakToUse = find(kdist_diff>thresh,1)-1;
             
             if peakToUse == 0 && max(kdist_diff(2:end)) > thresh
-                peakToUse = find(kdist_diff(2:end)>thresh,1)-1;
+                peakToUse = find(kdist_diff(2:end)>thresh,1);
             elseif peakToUse == 0
                 peakToUse = 1; 
             end 
@@ -247,8 +264,8 @@ function [idxVals] = DBscanDynamicEpi(varargin)
 
 
     else
-        idxVals = zeros(length(distMat), 1);
-        "warning: no good epsilon value found, returning zeros"
+        idxVals = ones(length(distMat), 1) * -1;
+        "warning: no good epsilon value found, returning -1"
         d
     end
 end

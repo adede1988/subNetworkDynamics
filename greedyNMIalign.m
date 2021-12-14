@@ -1,4 +1,4 @@
-function [outClust] = greedyNMIalign(sets)
+function [outClust] = greedyNMIalign(sets, W)
     
     %this function takes in a matrix where the rows indicate variables and
     %the columns indicate different clusterings of those variables. All
@@ -51,17 +51,19 @@ function [outClust] = greedyNMIalign(sets)
         end
         sets(:,ii) = outSet; 
     end
-        
+    W = W ./ sum(W); 
+    W = eye(length(W)) .* W; 
     %% get the starting best average nmi and use it as a starting seed
-    test = mean(reshape(arrayfun(@(x,y) nmi(sets(:,x), sets(:,y)), ...
+    test = mean(W*(reshape(arrayfun(@(x,y) nmi(sets(:,x), sets(:,y)), ...
                 reshape(repmat([1:size(sets,2)],[size(sets,2),1]), [size(sets,2)^2,1]), ...
                 reshape(repmat([1:size(sets,2)],[size(sets,2),1])', [size(sets,2)^2,1])), ...
-                [size(sets,2), size(sets,2)]), 'omitnan');
-    [valToBeat, seedI] = max(test); 
+                [size(sets,2), size(sets,2)])-eye(size(W))), 'omitnan');
+    [~, seedI] = max(test); 
     outClust = sets(:,seedI);  
+    valToBeat = mean(diag(W)'.*arrayfun(@(x) nmi(outClust, sets(:,x)), [1:size(sets,2)]), 'omitnan');
     IDs = unique(sets); %possible cluster IDs
     
-    
+%     W = diag(W); 
     check = true; 
     %loop through all trodes and try changing each to each possible ID,
     %recheck aNMI, if better accept change, if not, don't, stop looping
@@ -72,7 +74,7 @@ function [outClust] = greedyNMIalign(sets)
             for kk = 1:length(IDs)
                 testSet = outClust; 
                 testSet(ii) = IDs(kk); 
-                test = mean(arrayfun(@(x) nmi(testSet, sets(:,x)), [1:size(sets,2)]), 'omitnan');
+                test = mean(diag(W)'.*arrayfun(@(x) nmi(testSet, sets(:,x)), [1:size(sets,2)]), 'omitnan');
                 if unique(testSet) == -1
                     'hold on'
                 end

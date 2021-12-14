@@ -84,7 +84,7 @@ function [silhouettes, clusti] = getSil(corMat, idx)
       
       
       else
-        warning('only 1 or 0 clusters in input, returning NaNs')
+%         warning('only 1 or 0 clusters in input, returning NaNs')
         silhouettes = nan(length(corMat), 1); 
         clusti = [1:1:length(corMat)]; 
       end
