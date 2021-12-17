@@ -18,11 +18,11 @@ function [idxVals] = DBscanDynamicEpi(varargin)
 %the input matrix to make for better clustering output. The possible
 %transformations are specified as string inputs to the transofrm varargin 
 %as follows:
-%       'raw'[default]: pdist2(corMat, corMat, 'correlation')
-%       'map'         : pdist2(corrcoef(corMat), corrcoef(corMat), 'correlation') 
-%       'mapDist'     : pdist2(corrcoef(corMat), corrcoef(corMat))
-%       'mapDist2'    : pdist2(corrcoef(corMat), corrcoef(corMat)) .^2
-%       'mapDistX'    : loops d additional times on the output from the
+%  1 OR 'raw'[default]: pdist2(corMat, corMat, 'correlation')
+%  2 OR 'map'         : pdist2(corrcoef(corMat), corrcoef(corMat), 'correlation') 
+%  3 OR 'mapDist'     : pdist2(corrcoef(corMat), corrcoef(corMat))
+%  4 OR 'mapDist2'    : pdist2(corrcoef(corMat), corrcoef(corMat)) .^2
+%  5 OR 'mapDistX'    : loops d additional times on the output from the
 %                       mapDist2 option
 %2) finding of appropriate epsilon value. Using the k-distance values in
 %the transformed matrix, an epsilon value is selected that maximizes the
@@ -140,6 +140,8 @@ function [idxVals] = DBscanDynamicEpi(varargin)
     kdist_diff = smoothdata(diff(kdist), 'gaussian', length(kdist)/10); 
     
     %% create a threshold for what steepness counts as real
+    % KNOWN BUG: this is really best for clustering about 60-100 items.
+    % Larger sets won't work so well because of how this threshold is set
     [~, max_diff_loc] = max(kdist_diff); 
     temp = kdist_diff; 
     %trim out the area around the max value (usually going to be the end)
@@ -265,7 +267,7 @@ function [idxVals] = DBscanDynamicEpi(varargin)
 
     else
         idxVals = ones(length(distMat), 1) * -1;
-        "warning: no good epsilon value found, returning -1"
-        d
+%         "warning: no good epsilon value found, returning -1"
+%         d
     end
 end

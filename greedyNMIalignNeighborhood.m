@@ -65,29 +65,43 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
     
 %     W = diag(W); 
     check = true; 
-    loopi = 1; 
+    loopi = 1;
     %loop through all trodes and try changing each to each possible ID,
     %recheck aNMI, if better accept change, if not, don't, stop looping
     %when no changes are made for a whole run through the trodes
-    'here'
+ 
     while check
         noChange = true; 
+        changei = 0; 
+%         tic
         for ii = 1:length(outClust)
-            for kk = 1:length(IDs)
+            
+            curID = outClust(ii); 
+            center = find(IDs==curID);
+            if center<4
+                center = 4;
+            end
+            if center+3>length(IDs)
+                center = length(IDs) - 3;
+            end
+           
+            for kk = center-3:center+3
                 testSet = outClust; 
                 testSet(ii) = IDs(kk); 
                 test = mean(diag(W)'.*arrayfun(@(x) nmi(testSet, sets(:,x)), [1:size(sets,2)]), 'omitnan');
-                if unique(testSet) == -1
-                    'hold on'
-                end
+      
                 if test > valToBeat
                     noChange = false; 
                     outClust = testSet;
                     valToBeat = test; 
+                    changei = changei + 1; 
                 end
             end
+           
         end
-        loopi = loopi + 1
+%         toc
+%         loopi = loopi + 1
+%         changei
         if noChange || loopi > maxIter
             check = false;
         end
