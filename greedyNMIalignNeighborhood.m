@@ -63,7 +63,6 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
     valToBeat = mean(diag(W)'.*arrayfun(@(x) nmi(outClust, sets(:,x)), [1:size(sets,2)]), 'omitnan');
     IDs = unique(sets); %possible cluster IDs
     
-%     W = diag(W); 
     check = true; 
     loopi = 1;
     %loop through all trodes and try changing each to each possible ID,
@@ -94,14 +93,11 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
                     noChange = false; 
                     outClust = testSet;
                     valToBeat = test; 
-                    changei = changei + 1; 
                 end
             end
            
         end
-%         toc
-%         loopi = loopi + 1
-%         changei
+        loopi = loopi + 1
         if noChange || loopi > maxIter
             check = false;
         end

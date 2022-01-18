@@ -1,4 +1,4 @@
-function [outClust] = greedyNMIalign(sets, W, maxIter)
+function [outClust] = greedyNMIalign(sets, maxIter)
     
     %this function takes in a matrix where the rows indicate variables and
     %the columns indicate different clusterings of those variables. All
@@ -51,8 +51,7 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
         end
         sets(:,ii) = outSet; 
     end
-    W = W ./ sum(W); 
-    W = eye(length(W)) .* W; 
+
     %% get the starting best average nmi and use it as a starting seed
     test = mean(W*(reshape(arrayfun(@(x,y) nmi(sets(:,x), sets(:,y)), ...
                 reshape(repmat([1:size(sets,2)],[size(sets,2),1]), [size(sets,2)^2,1]), ...
@@ -60,26 +59,23 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
                 [size(sets,2), size(sets,2)])-eye(size(W))), 'omitnan');
     [~, seedI] = max(test); 
     outClust = sets(:,seedI);  
-    valToBeat = mean(diag(W)'.*arrayfun(@(x) nmi(outClust, sets(:,x)), [1:size(sets,2)]), 'omitnan');
+    valToBeat = mean(arrayfun(@(x) nmi(outClust, sets(:,x)), [1:size(sets,2)]), 'omitnan');
     IDs = unique(sets); %possible cluster IDs
     
-%     W = diag(W); 
+
     check = true; 
     loopi = 1; 
     %loop through all trodes and try changing each to each possible ID,
     %recheck aNMI, if better accept change, if not, don't, stop looping
     %when no changes are made for a whole run through the trodes
-    'here'
+
     while check
         noChange = true; 
         for ii = 1:length(outClust)
             for kk = 1:length(IDs)
                 testSet = outClust; 
                 testSet(ii) = IDs(kk); 
-                test = mean(diag(W)'.*arrayfun(@(x) nmi(testSet, sets(:,x)), [1:size(sets,2)]), 'omitnan');
-                if unique(testSet) == -1
-                    'hold on'
-                end
+                test = mean(arrayfun(@(x) nmi(testSet, sets(:,x)), [1:size(sets,2)]), 'omitnan');
                 if test > valToBeat
                     noChange = false; 
                     outClust = testSet;
