@@ -1,9 +1,9 @@
 function [idxVals] = DBscanDynamicEpi(varargin)
 
 %This function is a wrapper for Matlab's builtin DBscan function
-%There must be at least two inputs in the first and second input positions: 
+%There must be at least one input in the first input position: 
 %1) corMat   : a symmetric matrix of correlations between points to be
-%              clustered
+%              clustered (also works with any symmetric similarity matrix)
 %There are four optional inputs (which are assumed to be inputs 2-5): 
 %2) k        : The k parameter for input to DBscan [default = 3]
 %3) transform: how the input corMat should be transformed before clustering
@@ -16,7 +16,7 @@ function [idxVals] = DBscanDynamicEpi(varargin)
 %four main computations are performed: 
 %1) transformation of the corMat. The goal is to increase the contrast of
 %the input matrix to make for better clustering output. The possible
-%transformations are specified as string inputs to the transofrm varargin 
+%transformations are specified as string (or numeric) inputs to the transform varargin 
 %as follows:
 %  1 OR 'raw'[default]: pdist2(corMat, corMat, 'correlation')
 %  2 OR 'map'         : pdist2(corrcoef(corMat), corrcoef(corMat), 'correlation') 
@@ -37,6 +37,12 @@ function [idxVals] = DBscanDynamicEpi(varargin)
 %the general idea of transforming the space to be clustered from one of
 %point-wise connections/similarities/correlations to one of row by column
 %connections using corrcoef(corMat) was inspired by Liu et al. (2012).
+
+%NOTE: the way the threshold for step 2 (finding epsilon) is decided effectively 
+%assumes that there are 30-100 items to be clustered. This is because it 
+%disregards the points that are +-5 positions around the maximum in the 
+%derivative of the k-distance curve. For clustering of larger data sets
+%this value should be increased. Key edit at lines 154-160
 
 %Adam Dede, adam.osman.dede@gmail.com, Fall 2021
 

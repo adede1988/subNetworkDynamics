@@ -5,7 +5,7 @@ function [nmi] = nmi(set1, set2)
 %(2002). 
 
 %inputs: 
-%   set1 and set2: vector2 of cluter IDs where -1 indicates noise/
+%   set1 and set2: vector of cluter IDs where -1 indicates noise/
 %                  unclustered and positive integer values indicate 
 %                  different cluster labels
 
