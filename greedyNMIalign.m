@@ -53,10 +53,10 @@ function [outClust] = greedyNMIalign(sets, maxIter)
     end
 
     %% get the starting best average nmi and use it as a starting seed
-    test = mean(W*(reshape(arrayfun(@(x,y) nmi(sets(:,x), sets(:,y)), ...
+    test = mean(reshape(arrayfun(@(x,y) nmi(sets(:,x), sets(:,y)), ...
                 reshape(repmat([1:size(sets,2)],[size(sets,2),1]), [size(sets,2)^2,1]), ...
                 reshape(repmat([1:size(sets,2)],[size(sets,2),1])', [size(sets,2)^2,1])), ...
-                [size(sets,2), size(sets,2)])-eye(size(W))), 'omitnan');
+                [size(sets,2), size(sets,2)])-eye(size(sets,2)), 'omitnan');
     [~, seedI] = max(test); 
     outClust = sets(:,seedI);  
     valToBeat = mean(arrayfun(@(x) nmi(outClust, sets(:,x)), [1:size(sets,2)]), 'omitnan');
@@ -83,7 +83,7 @@ function [outClust] = greedyNMIalign(sets, maxIter)
                 end
             end
         end
-        loopi = loopi + 1
+        loopi = loopi + 1;
         if noChange || loopi > maxIter
             check = false;
         end
