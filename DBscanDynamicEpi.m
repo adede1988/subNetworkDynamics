@@ -148,15 +148,18 @@ function [idxVals] = DBscanDynamicEpi(varargin)
     %% create a threshold for what steepness counts as real
     % KNOWN BUG: this is really best for clustering about 60-100 items.
     % Larger sets won't work so well because of how this threshold is set
+    %           Attempted fix: use of trim variable makes cutting off
+    %           around the max dynamic
     [~, max_diff_loc] = max(kdist_diff); 
     temp = kdist_diff; 
+    trim = round(length(temp)/10); 
     %trim out the area around the max value (usually going to be the end)
     if max_diff_loc<6
-        temp(1:10) = [];
+        temp(1:trim) = [];
     elseif max_diff_loc>length(kdist_diff)-11
-       temp(length(kdist_diff)-10:end) = [];      
+       temp(length(kdist_diff)-trim:end) = [];      
     else
-        temp(max_diff_loc-5:max_diff_loc+5) = []; 
+        temp(max_diff_loc-ceil(trim/2):max_diff_loc+floor(trim/2)) = []; 
     end
     
     mean_diff = mean(temp); 

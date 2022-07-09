@@ -209,7 +209,7 @@ end
     end
     result(12) = result(1) / result(8); 
 
-    comps = hilbert(W' * Sinput(curChan_i,:)').';
+    comps = hilbert((W' * Sinput(curChan_i,:))').';
     maps = W' * S; 
 
 end
