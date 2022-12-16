@@ -1,4 +1,4 @@
-function [outClust] = greedyNMIalign(sets, W, maxIter)
+function [outClust] = greedyNMIalignNeighborhood(sets, W, maxIter)
     
     %this function takes in a matrix where the rows indicate variables and
     %the columns indicate different clusterings of those variables. All
@@ -16,6 +16,8 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
 
     %input: 
     %   sets: variables X cluster schemes 
+    %   W   : weight vector of how much to weight the input sets by
+    %maxIter: maximum iterations 
 
     %output:
     %   outClust: a vector with a single cluster scheme that has maximal
@@ -97,7 +99,7 @@ function [outClust] = greedyNMIalign(sets, W, maxIter)
             end
            
         end
-        loopi = loopi + 1
+        loopi = loopi + 1;
         if noChange || loopi > maxIter
             check = false;
         end

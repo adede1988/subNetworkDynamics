@@ -73,7 +73,8 @@ for win = 1:length(windowStarts)
 end
 
 % z-score the SS differences 
-diffsZ = (diffs - mean(diffs)) / std(diffs); 
+diffsZ = (diffs - mean(diffs( diffs<prctile(diffs,97.5) & diffs>prctile(diffs,2.5)))) /...
+    std(diffs( diffs<prctile(diffs,97.5) & diffs>prctile(diffs,2.5))); 
 
 %1=window that starts at the corresponding windowStarts index is good
 %0=window that starts at the corresponding windowStarts index is bad

@@ -146,7 +146,6 @@ function [idxVals] = DBscanDynamicEpi(varargin)
     kdist_diff = smoothdata(diff(kdist), 'gaussian', length(kdist)/10); 
     
     %% create a threshold for what steepness counts as real
-    % KNOWN BUG: this is really best for clustering about 60-100 items.
     % Larger sets won't work so well because of how this threshold is set
     %           Attempted fix: use of trim variable makes cutting off
     %           around the max dynamic
@@ -175,15 +174,15 @@ function [idxVals] = DBscanDynamicEpi(varargin)
     candidates = find(diff(kdist_diff2)==-2) + 1;
     %down select to above threshold peaks in steepness
     candidates(kdist_diff(candidates)<thresh) = []; 
-    %don't use a peak too near the end
-    candidates(candidates>length(kdist)-5) = []; 
-    
+    %don't use a peak too near the end or beginning
+    candidates(candidates>(length(kdist)-trim/2) | candidates<(trim*4)) = []; 
+
     %% figure out which steepness peak to use
     if isempty(candidates) 
         %check if the threshold was ever crossed
         if max(kdist_diff) > thresh
             %it is crossed, so just grab the point where it crosses and use it
-            peakToUse = find(kdist_diff>thresh,1)-1;
+            peakToUse = find(kdist_diff(trim*4:end)>thresh,1)-1+trim*4;
             
             if peakToUse == 0 && max(kdist_diff(2:end)) > thresh
                 peakToUse = find(kdist_diff(2:end)>thresh,1);

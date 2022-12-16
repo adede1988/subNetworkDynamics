@@ -41,6 +41,13 @@ function [L, comps, maps, W, result] = GEDclust(varargin)
 %                        if Sinput is a bandpassed version of Rinput. This
 %                        is a good spot to record what band was used.
 %                        default = [1,2]
+%   clean  (optional) :  optional indicator variable (1=clean, 0=do not
+%                        clean) specifying whether or not to eliminate
+%                        epochs with a large mean difference from the mean
+%                        covariance matrix when constructing both the S and
+%                        R matrices for GED. If temporal cleaning is
+%                        already done, then this should probably be set to
+%                        0, but default is 1. 
 
 %outputs: 
 %   L:      eigenvalues 
@@ -76,6 +83,7 @@ switch nargin
         clustMap = ones(min(size(Sinput)),1);
         IDcode = 1; 
         bandFrex = [1,2]; 
+        clean = 1; 
     case 3
         Sinput = varargin{1}; 
         Rinput = varargin{2};
@@ -84,6 +92,7 @@ switch nargin
         clustMap = ones(min(size(Sinput)),1);
         IDcode = 1; 
         bandFrex = [1,2]; 
+        clean = 1; 
     case 4
         warning('Error: if specifying curClus, then clustMap must also be specified')
         return
@@ -95,6 +104,7 @@ switch nargin
         clustMap = varargin{5};
         IDcode = 1; 
         bandFrex = [1,2];
+        clean = 1; 
     case 6
         Sinput = varargin{1}; 
         Rinput = varargin{2};
@@ -103,6 +113,7 @@ switch nargin
         clustMap = varargin{5};
         IDcode = varargin{6}; 
         bandFrex = [1,2];
+        clean = 1; 
     case 7
         Sinput = varargin{1}; 
         Rinput = varargin{2};
@@ -111,6 +122,16 @@ switch nargin
         clustMap = varargin{5};
         IDcode = varargin{6}; 
         bandFrex = varargin{7};
+        clean = 1; 
+    case 8
+        Sinput = varargin{1}; 
+        Rinput = varargin{2};
+        onsets = varargin{3}; 
+        curClus = varargin{4}; 
+        clustMap = varargin{5};
+        IDcode = varargin{6}; 
+        bandFrex = varargin{7};
+        clean = varargin{8}; 
     otherwise
         warning('Error: needs at least 2 inputs: signal and reference matrices')
         return
@@ -143,26 +164,34 @@ end
         Stmp(segi,:,:) = snipdat*snipdat'/(onsets(segi+1) - onsets(segi));
         Rtmp(segi,:,:) = rnipdat*rnipdat'/(onsets(segi+1) - onsets(segi)); 
     end
-    % clean S
-    meanS = squeeze(mean(Stmp));
-    dists = zeros(1,size(Stmp,1));
-    for segi=1:size(Stmp,1)
-        s = Stmp(segi,:,:);
-        dists(segi) = sqrt( sum((s(:)-meanS(:)).^2) );
+    
+    if clean == 1
+        % clean S
+        meanS = squeeze(mean(Stmp));
+        dists = zeros(1,size(Stmp,1));
+        for segi=1:size(Stmp,1)
+            s = Stmp(segi,:,:);
+            dists(segi) = sqrt( sum((s(:)-meanS(:)).^2) );
+        end
+        %S for GED
+        S = squeeze(mean( Stmp(zscore(dists)<3,:,:) ,1));
+    else
+        S = squeeze(mean( Stmp ,1));
     end
-    %S for GED
-    S = squeeze(mean( Stmp(zscore(dists)<3,:,:) ,1));
 
-
-    % clean R
-    meanR = squeeze(mean(Rtmp));
-    dists = zeros(1,size(Rtmp,1));
-    for segi=1:size(Rtmp,1)
-        r = Rtmp(segi,:,:);
-        dists(segi) = sqrt( sum((r(:)-meanR(:)).^2) );
+    if clean == 1
+        % clean R
+        meanR = squeeze(mean(Rtmp));
+        dists = zeros(1,size(Rtmp,1));
+        for segi=1:size(Rtmp,1)
+            r = Rtmp(segi,:,:);
+            dists(segi) = sqrt( sum((r(:)-meanR(:)).^2) );
+        end
+        %R for GED
+        R = squeeze(mean( Rtmp(zscore(dists)<3,:,:) ,1));
+    else
+        R = squeeze(mean( Rtmp ,1));    
     end
-    %R for GED
-    R = squeeze(mean( Rtmp(zscore(dists)<3,:,:) ,1));
 
     % regularize R
     gamma = .01;
