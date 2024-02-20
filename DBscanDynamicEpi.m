@@ -151,11 +151,11 @@ function [idxVals] = DBscanDynamicEpi(varargin)
     %           around the max dynamic
     [~, max_diff_loc] = max(kdist_diff); 
     temp = kdist_diff; 
-    trim = round(length(temp)/10); 
+    trim = round(length(temp)/20); 
     %trim out the area around the max value (usually going to be the end)
-    if max_diff_loc<6
+    if max_diff_loc<trim
         temp(1:trim) = [];
-    elseif max_diff_loc>length(kdist_diff)-11
+    elseif max_diff_loc>length(kdist_diff)-trim
        temp(length(kdist_diff)-trim:end) = [];      
     else
         temp(max_diff_loc-ceil(trim/2):max_diff_loc+floor(trim/2)) = []; 
